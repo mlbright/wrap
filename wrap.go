@@ -75,9 +75,12 @@ func main() {
 	go func() {
 		<-done
 		server.Stop(1)
+		fmt.Println("Done.")
+		os.Exit(0)
 	}()
 
-	server.ListenAndServe()
+	err = server.ListenAndServe()
+	check(err)
 }
 
 func getIP() string {
