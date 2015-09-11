@@ -16,6 +16,6 @@ Download the binary for your platform, and put it in your system's PATH.
 
 ## References:
 
-* [Library](https://github.com/tylerb/graceful) that wraps the Golang std library net/http objects
-for graceful shutdown
-* Another [approach](http://www.hydrogen18.com/blog/stop-listening-http-server-go.html)
+* [Graceful](https://github.com/tylerb/graceful) is a library that wraps the Golang std library net/http objects
+for graceful shutdown.
+* Another [approach](http://www.hydrogen18.com/blog/stop-listening-http-server-go.html).
