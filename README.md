@@ -2,9 +2,11 @@
 
 "_because sharing files is a PITA._"
 
-Wrap tries as best it can to serve up 1 file over HTTP on the port of your choosing. Then it exits.
-
+Wrap serves up 1 file over HTTP on the port of your choosing. Then it exits.
 Download the binary for your platform, and put it in your system's PATH.
 
-Usage:
+## Usage:
 
+#### Linux: `wrap /tmp/some-file`
+
+#### Windows: `wrap.exe c:\src\wrap\wrap.go`
