@@ -10,3 +10,8 @@ Download the binary for your platform, and put it in your system's PATH.
 #### Linux: `wrap /tmp/some-file`
 
 #### Windows: `wrap.exe c:\src\wrap\wrap.go`
+
+## Contributing
+
+* Please show me an easier way
+* Fork, and submit a pull request
