@@ -11,7 +11,7 @@ Download the binary for your platform, and put it in your system's PATH.
 
 #### Windows: `wrap.exe c:\src\wrap\wrap.go`
 
-## Contributing
+## Contributing:
 
 * Please show me an easier way
 * Fork, and submit a pull request
