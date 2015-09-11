@@ -32,7 +32,7 @@ func check(err error) {
 
 func main() {
 	var err error
-
+	var port = flag.String("port", "8080", "port to run wrap on")
 	flag.Parse()
 	if len(flag.Args()) != 1 {
 		fmt.Println("You must specify a file.")
@@ -56,7 +56,7 @@ func main() {
 
 	server := &graceful.Server{
 		Server: &http.Server{
-			Addr:    ":8080",
+			Addr:    ":" + *port,
 			Handler: handler,
 		},
 	}
@@ -64,6 +64,11 @@ func main() {
 	ip := getIP()
 
 	u, err := url.Parse("http://" + ip + server.Addr + "/" + basename)
+	check(err)
+	fmt.Println(u)
+
+	hostname, err := os.Hostname()
+	u, err = url.Parse("http://" + hostname + server.Addr + "/" + basename)
 	check(err)
 	fmt.Println(u)
 
