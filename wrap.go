@@ -15,13 +15,12 @@ import (
 type wrapHandler struct {
 	Basename string
 	File     *os.File
-	Done     chan struct{}
+    Server *graceful.Server
 }
 
 func (wh *wrapHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	http.ServeContent(rw, r, wh.Basename, time.Now(), wh.File)
-	wh.Done <- struct{}{}
-	close(wh.Done)
+    wh.Server.Stop(1 * time.Second)
 }
 
 func check(err error) {
@@ -43,8 +42,6 @@ func main() {
 	check(err)
 	defer fh.Close()
 	basename := filepath.Base(path)
-
-	done := make(chan struct{})
 
 	handler := &wrapHandler{
 		Basename: basename,
@@ -74,13 +71,16 @@ func main() {
 
 	go func() {
 		<-done
-		server.Stop(1)
+		server.Stop(2)
 		fmt.Println("Done.")
-		os.Exit(0)
+        os.Exit(0)
 	}()
 
-	err = server.ListenAndServe()
-	check(err)
+    go func() {
+        check(server.ListenAndServe())
+    }()
+
+    select {}
 }
 
 func getIP() string {
