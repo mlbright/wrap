@@ -15,12 +15,12 @@ import (
 type wrapHandler struct {
 	Basename string
 	File     *os.File
-    Server *graceful.Server
+	Server   *graceful.Server
 }
 
 func (wh *wrapHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	http.ServeContent(rw, r, wh.Basename, time.Now(), wh.File)
-    wh.Server.Stop(1 * time.Second)
+	wh.Server.Stop(1 * time.Nanosecond)
 }
 
 func check(err error) {
@@ -43,19 +43,20 @@ func main() {
 	defer fh.Close()
 	basename := filepath.Base(path)
 
+	server := &graceful.Server{}
+	server.ListenLimit = 0
+
 	handler := &wrapHandler{
 		Basename: basename,
 		File:     fh,
-		Done:     done,
+		Server:   server,
 	}
 
 	http.Handle("/"+basename, handler)
 
-	server := &graceful.Server{
-		Server: &http.Server{
-			Addr:    ":" + *port,
-			Handler: handler,
-		},
+	server.Server = &http.Server{
+		Addr:    ":" + *port,
+		Handler: handler,
 	}
 
 	ip := getIP()
@@ -69,18 +70,8 @@ func main() {
 	check(err)
 	fmt.Println(u)
 
-	go func() {
-		<-done
-		server.Stop(2)
-		fmt.Println("Done.")
-        os.Exit(0)
-	}()
-
-    go func() {
-        check(server.ListenAndServe())
-    }()
-
-    select {}
+	// This is actually a problem: there's an error here, and we're ignoring it.
+	server.ListenAndServe()
 }
 
 func getIP() string {
