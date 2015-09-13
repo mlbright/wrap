@@ -44,7 +44,6 @@ func main() {
 	basename := filepath.Base(path)
 
 	server := &graceful.Server{}
-	server.ListenLimit = 0
 
 	handler := &wrapHandler{
 		Basename: basename,
