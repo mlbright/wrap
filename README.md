@@ -1,20 +1,47 @@
-# wrap
+wrap
+========
 
-Wrap serves up 1 file over HTTP on the port of your choosing. Then it exits.
-Download the binary for your platform, and put it in your system's PATH.
+Wrap serves up a file over HTTP on the port of your choosing. Then it exits.
 
-## Usage:
+## Installation
 
-#### Linux: `wrap -port 8081 /tmp/some-file`
+To install, you could do:
 
-#### Windows: `wrap.exe -port 8081 c:\src\wrap\wrap.go`
+```
+git clone https://github.com/mlbright/wrap.git
+cd wrap
+go build wrap.go
+```
 
-## Contributing:
+Then put the binary in your system's PATH.
 
-* Please show me an easier way
-* Fork, and submit a pull request
+## Usage
 
-## References:
+Linux and OS X
+
+```
+wrap -port 8081 /tmp/some-file
+```
+
+Windows
+
+```
+wrap.exe -port 8081 c:\src\wrap\wrap.go
+```
+
+## Contributing
+
+If you would like to contribute, please:
+
+1. Create a GitHub issue regarding the contribution. Features and bugs should be discussed beforehand.
+2. Fork the repository.
+3. Create a pull request with your solution. This pull request should reference and close the issues (Fix #2).
+
+All pull requests should:
+
+1. Be `go fmt` formatted.
+
+## References
 
 * [Graceful](https://github.com/tylerb/graceful) is a library that wraps the Golang std library net/http objects
 for graceful shutdown.
