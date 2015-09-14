@@ -46,3 +46,4 @@ All pull requests should:
 * [Graceful](https://github.com/tylerb/graceful) is a library that wraps the Golang std library net/http objects
 for graceful shutdown.
 * Another [approach](http://www.hydrogen18.com/blog/stop-listening-http-server-go.html).
+* [Manners](https://github.com/braintree/manners) is what is used
