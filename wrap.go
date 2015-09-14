@@ -2,8 +2,7 @@ package main
 
 import (
 	"flag"
-	"fmt"
-    "github.com/braintree/manners"
+	"github.com/braintree/manners"
 	"log"
 	"net"
 	"net/http"
@@ -16,13 +15,13 @@ import (
 type wrapHandler struct {
 	Basename string
 	File     *os.File
-    Done chan struct{}
+	Done     chan struct{}
 }
 
 func (wh *wrapHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	t := time.Time{} // zero time
 	http.ServeContent(rw, r, wh.Basename, t, wh.File)
-    wh.Done <- struct{}{}
+	wh.Done <- struct{}{}
 }
 
 func check(err error) {
@@ -36,8 +35,7 @@ func main() {
 	var port = flag.String("port", "8080", "port to run wrap on")
 	flag.Parse()
 	if len(flag.Args()) != 1 {
-		fmt.Println("You must specify a file.")
-		os.Exit(1)
+		log.Fatal("You must specify a file.")
 	}
 	path := flag.Args()[0]
 	fh, err := os.Open(path)
@@ -45,31 +43,32 @@ func main() {
 	defer fh.Close()
 	basename := filepath.Base(path)
 
-    done := make(chan struct{})
-	handler := &wrapHandler{
-		Basename: basename,
-		File:     fh,
-        Done: done,
-	}
-
 	ip := getIP()
 
 	u, err := url.Parse("http://" + ip + ":" + *port + "/" + basename)
 	check(err)
-	fmt.Println(u)
+	log.Println(u)
 
 	hostname, err := os.Hostname()
 	u, err = url.Parse("http://" + hostname + ":" + *port + "/" + basename)
 	check(err)
-	fmt.Println(u)
+	log.Println(u)
 
-    go func() {
-        
-        <-done
-        manners.Close()
-    }()
+	done := make(chan struct{})
 
-	check(manners.ListenAndServe(":"+*port,handler))
+	handler := &wrapHandler{
+		Basename: basename,
+		File:     fh,
+		Done:     done,
+	}
+
+	go func() {
+		<-done
+		log.Println("Shutting down.")
+		manners.Close()
+	}()
+
+	check(manners.ListenAndServe(":"+*port, handler))
 }
 
 func getIP() string {
