@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"gopkg.in/tylerb/graceful.v1"
+    "github.com/braintree/manners"
 	"log"
 	"net"
 	"net/http"
@@ -16,21 +16,18 @@ import (
 type wrapHandler struct {
 	Basename string
 	File     *os.File
-}
-
-type OneTimeListener struct {
-	*net.TCPListener
-	Count int
+    Done chan struct{}
 }
 
 func (wh *wrapHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	t := time.Time{} // zero time
 	http.ServeContent(rw, r, wh.Basename, t, wh.File)
+    wh.Done <- struct{}{}
 }
 
 func check(err error) {
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }
 
@@ -48,47 +45,31 @@ func main() {
 	defer fh.Close()
 	basename := filepath.Base(path)
 
+    done := make(chan struct{})
 	handler := &wrapHandler{
 		Basename: basename,
 		File:     fh,
-	}
-
-	http.Handle("/"+basename, handler)
-
-	server := &graceful.Server{}
-
-	server.Server = &http.Server{
-		Addr:    ":" + *port,
-		Handler: handler,
+        Done: done,
 	}
 
 	ip := getIP()
 
-	u, err := url.Parse("http://" + ip + server.Addr + "/" + basename)
+	u, err := url.Parse("http://" + ip + ":" + *port + "/" + basename)
 	check(err)
 	fmt.Println(u)
 
 	hostname, err := os.Hostname()
-	u, err = url.Parse("http://" + hostname + server.Addr + "/" + basename)
+	u, err = url.Parse("http://" + hostname + ":" + *port + "/" + basename)
 	check(err)
 	fmt.Println(u)
 
-	server.ConnState = func(con net.Conn, state http.ConnState) {
-		switch state {
-		case http.StateNew:
-			log.Println("New Connection!")
-		case http.StateActive:
-			log.Println("Active Connection!")
-		case http.StateIdle:
-			log.Println("Idle Connection!")
-		case http.StateHijacked:
-			log.Println("Hijacked Connection!")
-		case http.StateClosed:
-			log.Println("Closed Connection!")
-		}
-	}
+    go func() {
+        
+        <-done
+        manners.Close()
+    }()
 
-	check(server.ListenAndServe())
+	check(manners.ListenAndServe(":"+*port,handler))
 }
 
 func getIP() string {
