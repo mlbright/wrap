@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"gopkg.in/tylerb/graceful.v1"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -15,12 +16,16 @@ import (
 type wrapHandler struct {
 	Basename string
 	File     *os.File
-	Server   *graceful.Server
+}
+
+type OneTimeListener struct {
+	*net.TCPListener
+	Count int
 }
 
 func (wh *wrapHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
-	http.ServeContent(rw, r, wh.Basename, time.Now(), wh.File)
-	wh.Server.Stop(1 * time.Nanosecond)
+	t := time.Time{} // zero time
+	http.ServeContent(rw, r, wh.Basename, t, wh.File)
 }
 
 func check(err error) {
@@ -43,15 +48,14 @@ func main() {
 	defer fh.Close()
 	basename := filepath.Base(path)
 
-	server := &graceful.Server{}
-
 	handler := &wrapHandler{
 		Basename: basename,
 		File:     fh,
-		Server:   server,
 	}
 
 	http.Handle("/"+basename, handler)
+
+	server := &graceful.Server{}
 
 	server.Server = &http.Server{
 		Addr:    ":" + *port,
@@ -69,8 +73,22 @@ func main() {
 	check(err)
 	fmt.Println(u)
 
-	// This is actually a problem: there's an error here, and we're ignoring it.
-	server.ListenAndServe()
+	server.ConnState = func(con net.Conn, state http.ConnState) {
+		switch state {
+		case http.StateNew:
+			log.Println("New Connection!")
+		case http.StateActive:
+			log.Println("Active Connection!")
+		case http.StateIdle:
+			log.Println("Idle Connection!")
+		case http.StateHijacked:
+			log.Println("Hijacked Connection!")
+		case http.StateClosed:
+			log.Println("Closed Connection!")
+		}
+	}
+
+	check(server.ListenAndServe())
 }
 
 func getIP() string {
