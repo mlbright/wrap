@@ -121,6 +121,7 @@ func main() {
 		Addr:      ":" + *port,
 		ConnState: connStateLog,
 	}
+	server.SetKeepAlivesEnabled(false)
 
 	l, err := net.Listen("tcp", ":"+*port)
 	check(err)
