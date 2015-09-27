@@ -38,7 +38,8 @@ func getIP() string {
 
 type singleListener struct {
 	net.Listener
-	active chan struct{}
+	active   chan struct{}
+	serviced bool
 }
 
 type singleConn struct {
@@ -47,11 +48,21 @@ type singleConn struct {
 }
 
 func NewSingleListener(l net.Listener) net.Listener {
-	return &singleListener{l, make(chan struct{}, 1)} // allow only 1 connection
+	return &singleListener{l, make(chan struct{}, 1), false} // allow only 1 connection
+}
+
+type errDelivered struct{}
+
+func (e *errDelivered) Error() string {
+	return "Delivered Content."
 }
 
 func (l *singleListener) Accept() (net.Conn, error) {
 	l.active <- struct{}{}
+	if serviced {
+		return nil, &errDelivered{}
+	}
+	serviced = true
 	c, err := l.Listener.Accept()
 	if err != nil {
 		<-l.active
@@ -113,5 +124,10 @@ func main() {
 
 	l, err := net.Listen("tcp", ":"+*port)
 	check(err)
-	check(server.Serve(NewSingleListener(l)))
+	err = server.Serve(NewSingleListener(l))
+	if _, ok := err.(*errDelivered); ok {
+		log.Println("shutting down safely")
+	} else {
+		log.Fatal(err)
+	}
 }
