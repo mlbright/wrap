@@ -36,8 +36,34 @@ func getIP() string {
 	return ip.String()
 }
 
-func ConnStateListener(c net.Conn, cs http.ConnState) {
-  log.Printf("CONN STATE: %v, %v\n", cs, c)
+type singleListener struct {
+  net.Listener
+  active chan struct {}
+}
+
+type singleConn struct {
+  net.Conn
+  active chan struct {}
+}
+
+func NewSingleListener(l net.Listener) net.Listener {
+  return &singleListener{l,make(chan struct{}, 1)} // allow only 1 connection
+}
+
+func (l *singleListener) Accept() (net.Conn, error) {
+  l.active <- struct{}{}
+  c, err := l.Listener.Accept()
+  if err != nil {
+    <- l.active
+    return nil, err
+  }
+  return &singleConn{c, l.active}, err
+}
+
+func (l *singleConn) Close() error {
+  err := l.Conn.Close()
+  <- l.active
+  return err
 }
 
 func main() {
@@ -70,9 +96,19 @@ func main() {
     log.Println("Delivered.")
   })
 
+  state := new(http.ConnState)
+  connStateLog := func (c net.Conn, cs http.ConnState) {
+    log.Printf("NEW CONN STATE: %v, %v\n", cs, c)
+    log.Printf("OLD CONN STATE: %v\n", state)
+    *state = cs
+  }
+
   server := &http.Server{
     Addr: ":" + *port,
-    ConnState: ConnStateListener,
+    ConnState: connStateLog,
   }
-  check(server.ListenAndServe())
+
+  l, err := net.Listen("tcp", ":" + *port)
+  check(err)
+  check(server.Serve(NewSingleListener(l)))
 }
