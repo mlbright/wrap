@@ -37,33 +37,33 @@ func getIP() string {
 }
 
 type singleListener struct {
-  net.Listener
-  active chan struct {}
+	net.Listener
+	active chan struct{}
 }
 
 type singleConn struct {
-  net.Conn
-  active chan struct {}
+	net.Conn
+	active chan struct{}
 }
 
 func NewSingleListener(l net.Listener) net.Listener {
-  return &singleListener{l,make(chan struct{}, 1)} // allow only 1 connection
+	return &singleListener{l, make(chan struct{}, 1)} // allow only 1 connection
 }
 
 func (l *singleListener) Accept() (net.Conn, error) {
-  l.active <- struct{}{}
-  c, err := l.Listener.Accept()
-  if err != nil {
-    <- l.active
-    return nil, err
-  }
-  return &singleConn{c, l.active}, err
+	l.active <- struct{}{}
+	c, err := l.Listener.Accept()
+	if err != nil {
+		<-l.active
+		return nil, err
+	}
+	return &singleConn{c, l.active}, err
 }
 
 func (l *singleConn) Close() error {
-  err := l.Conn.Close()
-  <- l.active
-  return err
+	err := l.Conn.Close()
+	<-l.active
+	return err
 }
 
 func main() {
@@ -90,25 +90,28 @@ func main() {
 	check(err)
 	log.Println(u)
 
-  http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-    t := time.Time{} // zero time
-    http.ServeContent(w, r, basename, t, fh)
-    log.Println("Delivered.")
-  })
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		t := time.Time{} // zero time
+		http.ServeContent(w, r, basename, t, fh)
+		log.Println("Delivered.")
+	})
 
-  state := new(http.ConnState)
-  connStateLog := func (c net.Conn, cs http.ConnState) {
-    log.Printf("NEW CONN STATE: %v, %v\n", cs, c)
-    log.Printf("OLD CONN STATE: %v\n", state)
-    *state = cs
-  }
+	var state http.ConnState
+	connStateLog := func(c net.Conn, cs http.ConnState) {
+		log.Printf("NEW CONN STATE: %v, %v\n", cs, c)
+		log.Printf("OLD CONN STATE: %v\n", state)
+		if state.String() == "active" && cs.String() == "idle" {
+			log.Println("We can shutdown now")
+		}
+		state = cs
+	}
 
-  server := &http.Server{
-    Addr: ":" + *port,
-    ConnState: connStateLog,
-  }
+	server := &http.Server{
+		Addr:      ":" + *port,
+		ConnState: connStateLog,
+	}
 
-  l, err := net.Listen("tcp", ":" + *port)
-  check(err)
-  check(server.Serve(NewSingleListener(l)))
+	l, err := net.Listen("tcp", ":"+*port)
+	check(err)
+	check(server.Serve(NewSingleListener(l)))
 }
