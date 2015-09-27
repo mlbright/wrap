@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"github.com/braintree/manners"
 	"log"
 	"net"
 	"net/http"
@@ -12,22 +11,33 @@ import (
 	"time"
 )
 
-type wrapHandler struct {
-	Basename string
-	File     *os.File
-	Done     chan struct{}
-}
-
-func (wh *wrapHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
-	t := time.Time{} // zero time
-	http.ServeContent(rw, r, wh.Basename, t, wh.File)
-	wh.Done <- struct{}{}
-}
-
 func check(err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func getIP() string {
+	ifaces, err := net.Interfaces()
+	check(err)
+	var ip net.IP
+	for _, i := range ifaces {
+		addrs, err := i.Addrs()
+		check(err)
+		for _, addr := range addrs {
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ip = v.IP
+			case *net.IPAddr:
+				ip = v.IP
+			}
+		}
+	}
+	return ip.String()
+}
+
+func ConnStateListener(c net.Conn, cs http.ConnState) {
+  log.Printf("CONN STATE: %v, %v\n", cs, c)
 }
 
 func main() {
@@ -54,38 +64,15 @@ func main() {
 	check(err)
 	log.Println(u)
 
-	done := make(chan struct{})
+  http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+    t := time.Time{} // zero time
+    http.ServeContent(w, r, basename, t, fh)
+    log.Println("Delivered.")
+  })
 
-	handler := &wrapHandler{
-		Basename: basename,
-		File:     fh,
-		Done:     done,
-	}
-
-	go func() {
-		<-done
-		log.Println("Shutting down.")
-		manners.Close()
-	}()
-
-	check(manners.ListenAndServe(":"+*port, handler))
-}
-
-func getIP() string {
-	ifaces, err := net.Interfaces()
-	check(err)
-	var ip net.IP
-	for _, i := range ifaces {
-		addrs, err := i.Addrs()
-		check(err)
-		for _, addr := range addrs {
-			switch v := addr.(type) {
-			case *net.IPNet:
-				ip = v.IP
-			case *net.IPAddr:
-				ip = v.IP
-			}
-		}
-	}
-	return ip.String()
+  server := &http.Server{
+    Addr: ":" + *port,
+    ConnState: ConnStateListener,
+  }
+  check(server.ListenAndServe())
 }
