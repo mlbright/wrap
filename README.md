@@ -45,5 +45,9 @@ All pull requests should:
 
 * [Graceful](https://github.com/tylerb/graceful) is a library that wraps the Golang std library net/http objects
 for graceful shutdown.
-* Another [approach](http://www.hydrogen18.com/blog/stop-listening-http-server-go.html).
-* [Manners](https://github.com/braintree/manners) is what is used
+* Another [approach](http://www.hydrogen18.com/blog/stop-listening-http-server-go.html) that uses a key idea: define a new
+error in the net.Listener Accept() function.
+* [Manners](https://github.com/braintree/manners) is what was used, but not necessary.
+* [Discussion on Google Groups](https://groups.google.com/forum/#!topic/golang-nuts/qt3ABSpKjzM) led to Gustavo Niemeyer's approach
+being used. No need for third party libraries. The difficult part is limiting the number of connections. Shutting down the
+server is just a question of wrapping the Accept() function in net.Listener().
