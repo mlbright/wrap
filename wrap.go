@@ -111,8 +111,8 @@ func main() {
 	connStateLog := func(c net.Conn, cs http.ConnState) {
 		log.Printf("NEW CONN STATE: %v, %v\n", cs, c)
 		log.Printf("OLD CONN STATE: %v\n", state)
-		if state.String() == "active" && cs.String() == "idle" {
-			log.Println("We can shutdown now")
+		if state.String() == "active" && (cs.String() == "idle" || cs.String() == "closed") {
+			log.Println("We can shutdown now.")
 		}
 		state = cs
 	}
@@ -127,8 +127,9 @@ func main() {
 	check(err)
 	err = server.Serve(NewSingleListener(l))
 	if _, ok := err.(*errDelivered); ok {
-		log.Println("shutting down safely")
+		log.Println("Shutting down safely.")
 	} else {
+		log.Println("HTTP server issue ...")
 		log.Fatal(err)
 	}
 }
