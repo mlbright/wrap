@@ -1,7 +1,8 @@
 wrap
 ========
 
-Wrap serves up a file over HTTP on the port of your choosing. Then it exits.
+Wrap serves up a file over HTTP on the port of your choosing. Then it exits. It
+only accepts one connection before shutting down.
 
 ## Installation
 
