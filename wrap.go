@@ -54,7 +54,7 @@ func NewSingleListener(l net.Listener) net.Listener {
 type errDelivered struct{}
 
 func (e *errDelivered) Error() string {
-	return "Delivered Content."
+	return "Place Holder"
 }
 
 func (l *singleListener) Accept() (net.Conn, error) {
@@ -107,7 +107,7 @@ func main() {
 		log.Println("Delivered.")
 	})
 
-	var state http.ConnState
+	/* var state http.ConnState
 	connStateLog := func(c net.Conn, cs http.ConnState) {
 		log.Printf("NEW CONN STATE: %v, %v\n", cs, c)
 		log.Printf("OLD CONN STATE: %v\n", state)
@@ -115,11 +115,11 @@ func main() {
 			log.Println("We can shutdown now.")
 		}
 		state = cs
-	}
+	} */
 
 	server := &http.Server{
-		Addr:      ":" + *port,
-		ConnState: connStateLog,
+		Addr: ":" + *port,
+		/* ConnState: connStateLog, */
 	}
 	server.SetKeepAlivesEnabled(false)
 
