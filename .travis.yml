@@ -1,0 +1,6 @@
+language: go
+
+script: go build wrap.go
+
+notifications:
+  email: true
