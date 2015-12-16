@@ -1,5 +1,6 @@
 wrap
 ====
+[![Build Status](https://travis-ci.org/mlbright/wrap.svg?branch=master)](http://travis-ci.org/mlbright/wrap)
 
 Wrap serves up a file over HTTP on the port of your choosing. Then it exits. It
 only accepts one connection before shutting down.
